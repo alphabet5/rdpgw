@@ -94,6 +94,6 @@ func Load(configFile string) Configuration {
 	if len(conf.Security.PAATokenSigningKey) < 32 {
 		log.Fatalf("Token signing key not long enough")
 	}
-
+	log.Printf("%+v\n", conf)
 	return conf
 }
