@@ -1,7 +1,6 @@
 package config
 
 import (
-	//	"github.com/spf13/viper"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/confmap"
@@ -69,6 +68,41 @@ type ClientConfig struct {
 	DefaultDomain       string `koanf:"defaultdomain"`
 }
 
+func ToCamel(s string) string {
+	s = strings.TrimSpace(s)
+	n := strings.Builder{}
+	n.Grow(len(s))
+	var capNext bool = true
+	for i, v := range []byte(s) {
+		vIsCap := v >= 'A' && v <= 'Z'
+		vIsLow := v >= 'a' && v <= 'z'
+		if capNext {
+			if vIsLow {
+				v += 'A'
+				v -= 'a'
+			}
+		} else if i == 0 {
+			if vIsCap {
+				v += 'a'
+				v -= 'A'
+			}
+		}
+		if vIsCap || vIsLow {
+			n.WriteByte(v)
+			capNext = false
+		} else if vIsNum := v >= '0' && v <= '9'; vIsNum {
+			n.WriteByte(v)
+			capNext = true
+		} else {
+			capNext = v == '_' || v == ' ' || v == '-' || v == '.'
+			if v == '.' {
+				n.WriteByte(v)
+			}
+		}
+	}
+	return n.String()
+}
+
 func Load(configFile string) Configuration {
 
 	var k = koanf.New(".")
@@ -86,19 +120,17 @@ func Load(configFile string) Configuration {
 		log.Fatalf("Error loading config from file: %v", err)
 	}
 
-	var envPrefix string = "RDPGW_"
-
-	if err := k.Load(env.Provider(envPrefix, ".", func(s string) string {
-		return strings.Replace(strings.ToLower(
-			strings.TrimPrefix(s, envPrefix)), "_", ".", -1)
+	if err := k.Load(env.ProviderWithValue("RDPGW_", ".", func(s string, v string) (string, interface{}) {
+		key := strings.Replace(strings.ToLower(strings.TrimPrefix(s, "RDPGW_")), "__", ".", -1)
+		key = ToCamel(key)
+		return key, v
 	}), nil); err != nil {
-		log.Fatalf("Error loading config from env: %v", err)
+		log.Fatalf("Error loading config from file: %v", err)
 	}
 
 	var conf Configuration
 
-	var koanfTag = koanf.UnmarshalConf{Tag: "koanf"}
-
+	koanfTag := koanf.UnmarshalConf{Tag: "koanf"}
 	k.UnmarshalWithConf("Server", &conf.Server, koanfTag)
 	k.UnmarshalWithConf("OpenId", &conf.OpenId, koanfTag)
 	k.UnmarshalWithConf("Caps", &conf.Caps, koanfTag)
