@@ -20,7 +20,7 @@ import (
 
 const (
 	RdpGwSession = "RDPGWSESSION"
-	MaxAge 		 = 120
+	MaxAge       = 120
 )
 
 type TokenGeneratorFunc func(context.Context, string, string) (string, error)
@@ -42,8 +42,8 @@ type Config struct {
 	NetworkAutoDetect    int
 	BandwidthAutoDetect  int
 	ConnectionType       int
-	SplitUserDomain		 bool
-	DefaultDomain		 string
+	SplitUserDomain      bool
+	DefaultDomain        string
 }
 
 func (c *Config) NewApi() {
@@ -202,19 +202,19 @@ func (c *Config) HandleDownload(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Disposition", "attachment; filename="+fn)
 	w.Header().Set("Content-Type", "application/x-rdp")
-	data := "full address:s:"+host+"\r\n"+
-		"gatewayhostname:s:"+c.GatewayAddress+"\r\n"+
-		"gatewaycredentialssource:i:5\r\n"+
-		"gatewayusagemethod:i:1\r\n"+
-		"gatewayprofileusagemethod:i:1\r\n"+
-		"gatewayaccesstoken:s:"+token+"\r\n"+
-		"networkautodetect:i:"+strconv.Itoa(c.NetworkAutoDetect)+"\r\n"+
-		"bandwidthautodetect:i:"+strconv.Itoa(c.BandwidthAutoDetect)+"\r\n"+
-		"connection type:i:"+strconv.Itoa(c.ConnectionType)+"\r\n"+
-		"username:s:"+render+"\r\n"+
-		"domain:s:"+domain+"\r\n"+
-		"bitmapcachesize:i:32000\r\n"+
-	        "smart sizing:i:1\r\n"
+	data := "full address:s:" + host + "\r\n" +
+		"gatewayhostname:s:" + c.GatewayAddress + "\r\n" +
+		"gatewaycredentialssource:i:5\r\n" +
+		"gatewayusagemethod:i:1\r\n" +
+		"gatewayprofileusagemethod:i:1\r\n" +
+		"gatewayaccesstoken:s:" + token + "\r\n" +
+		"networkautodetect:i:" + strconv.Itoa(c.NetworkAutoDetect) + "\r\n" +
+		"bandwidthautodetect:i:" + strconv.Itoa(c.BandwidthAutoDetect) + "\r\n" +
+		"connection type:i:" + strconv.Itoa(c.ConnectionType) + "\r\n" +
+		"username:s:" + render + "\r\n" +
+		"domain:s:" + domain + "\r\n" +
+		"bitmapcachesize:i:32000\r\n" +
+		"smart sizing:i:1\r\n"
 
 	http.ServeContent(w, r, fn, time.Now(), strings.NewReader(data))
 }

@@ -5,4 +5,3 @@ type Transport interface {
 	WritePacket(b []byte) (n int, err error)
 	Close() error
 }
-

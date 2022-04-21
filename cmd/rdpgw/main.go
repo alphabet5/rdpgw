@@ -19,19 +19,19 @@ import (
 )
 
 var cmd = &cobra.Command{
-	Use:	"rdpgw",
-	Long:	"Remote Desktop Gateway",
+	Use:  "rdpgw",
+	Long: "Remote Desktop Gateway",
 }
 
 var (
-	configFile	string
+	configFile string
 )
 
 var conf config.Configuration
 
 func main() {
 	// get config
-	cmd.PersistentFlags().StringVarP(&configFile, "conf", "c", "rdpgw.yaml",  "config file (json, yaml, ini)")
+	cmd.PersistentFlags().StringVarP(&configFile, "conf", "c", "rdpgw.yaml", "config file (json, yaml, ini)")
 	conf = config.Load(configFile)
 
 	security.VerifyClientIP = conf.Security.VerifyClientIp
@@ -53,11 +53,11 @@ func main() {
 	verifier := provider.Verifier(oidcConfig)
 
 	oauthConfig := oauth2.Config{
-		ClientID: conf.OpenId.ClientId,
+		ClientID:     conf.OpenId.ClientId,
 		ClientSecret: conf.OpenId.ClientSecret,
-		RedirectURL: "https://" + conf.Server.GatewayAddress + "/callback",
-		Endpoint: provider.Endpoint(),
-		Scopes: []string{oidc.ScopeOpenID, "profile", "email"},
+		RedirectURL:  "https://" + conf.Server.GatewayAddress + "/callback",
+		Endpoint:     provider.Endpoint(),
+		Scopes:       []string{oidc.ScopeOpenID, "profile", "email"},
 	}
 	security.OIDCProvider = provider
 	security.Oauth2Config = oauthConfig
@@ -107,24 +107,24 @@ func main() {
 	}
 	cfg.Certificates = append(cfg.Certificates, cert)
 	server := http.Server{
-		Addr:      ":" + strconv.Itoa(conf.Server.Port),
-		TLSConfig: cfg,
+		Addr:         ":" + strconv.Itoa(conf.Server.Port),
+		TLSConfig:    cfg,
 		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // disable http2
 	}
 
 	// create the gateway
 	handlerConfig := protocol.ServerConf{
-		IdleTimeout: conf.Caps.IdleTimeout,
-		TokenAuth: conf.Caps.TokenAuth,
+		IdleTimeout:   conf.Caps.IdleTimeout,
+		TokenAuth:     conf.Caps.TokenAuth,
 		SmartCardAuth: conf.Caps.SmartCardAuth,
 		RedirectFlags: protocol.RedirectFlags{
-			Clipboard: conf.Caps.EnableClipboard,
-			Drive: conf.Caps.EnableDrive,
-			Printer: conf.Caps.EnablePrinter,
-			Port: conf.Caps.EnablePort,
-			Pnp: conf.Caps.EnablePnp,
+			Clipboard:  conf.Caps.EnableClipboard,
+			Drive:      conf.Caps.EnableDrive,
+			Printer:    conf.Caps.EnablePrinter,
+			Port:       conf.Caps.EnablePort,
+			Pnp:        conf.Caps.EnablePnp,
 			DisableAll: conf.Caps.DisableRedirect,
-			EnableAll: conf.Caps.RedirectAll,
+			EnableAll:  conf.Caps.RedirectAll,
 		},
 		VerifyTunnelCreate: security.VerifyPAAToken,
 		VerifyServerFunc:   security.VerifyServerFunc,

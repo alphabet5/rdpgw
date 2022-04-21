@@ -14,8 +14,8 @@ const (
 	TunnelCreateResponseLen = HeaderLen + 18
 	TunnelAuthLen           = HeaderLen + 2 // + dynamic
 	TunnelAuthResponseLen   = HeaderLen + 16
-	ChannelCreateLen		= HeaderLen + 8 // + dynamic
-	ChannelResponseLen		= HeaderLen + 12
+	ChannelCreateLen        = HeaderLen + 8 // + dynamic
+	ChannelResponseLen      = HeaderLen + 12
 )
 
 func verifyPacketHeader(data []byte, expPt uint16, expSize uint32) (uint16, uint32, []byte, error) {
@@ -171,7 +171,7 @@ func TestChannelCreation(t *testing.T) {
 	server := "test_server"
 	client := ClientConfig{
 		Server: server,
-		Port: 3389,
+		Port:   3389,
 	}
 	s := &SessionInfo{}
 	hc := &ServerConf{

@@ -19,8 +19,8 @@ var (
 	EncryptionKey     []byte
 	UserSigningKey    []byte
 	UserEncryptionKey []byte
-	OIDCProvider	  *oidc.Provider
-	Oauth2Config	  oauth2.Config
+	OIDCProvider      *oidc.Provider
+	Oauth2Config      oauth2.Config
 )
 
 var ExpiryTime time.Duration = 5
@@ -210,7 +210,7 @@ func UserInfo(ctx context.Context, token string) (jwt.Claims, error) {
 	// go-jose doesnt verify the expiry
 	err := standard.Validate(jwt.Expected{
 		Issuer: "rdpgw",
-		Time: time.Now(),
+		Time:   time.Now(),
 	})
 
 	if err != nil {
