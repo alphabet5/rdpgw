@@ -79,6 +79,7 @@ func Load(configFile string) Configuration {
 	viper.SetConfigFile(configFile)
 	viper.AddConfigPath(".")
 	viper.SetEnvPrefix("RDPGW")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
