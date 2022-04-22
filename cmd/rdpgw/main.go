@@ -16,6 +16,10 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"fmt"
+	"html"
+//	"html/template"
+//	"embed"
 )
 
 var cmd = &cobra.Command{
@@ -140,6 +144,15 @@ func main() {
 	http.Handle("/metrics", promhttp.Handler())
 	http.HandleFunc("/tokeninfo", api.TokenInfo)
 	http.HandleFunc("/callback", api.HandleCallback)
+
+	////go:embed templates
+	//var templates embed.FS
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+	})
+	fs := http.FileServer(http.Dir("./static"))
+	http.Handle("/static", fs)
+
 
 	err = server.ListenAndServeTLS("", "")
 	if err != nil {
