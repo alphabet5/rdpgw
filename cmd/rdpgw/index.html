@@ -49,10 +49,10 @@
     </head>
 <body>
     <div>
-        <h2>Remote Desktop Gateway Connections</h2>
+        <h2>RDGateway Connections</h2>
         <ul>
-{{- range .hosts }}
-            <li><a href="https://{{ $.gatewayAddress }}/connect?host={{ . }}">{{ . }}</a></li>
+{{- range .Hosts }}
+            <li><a href="https://{{ $.GatewayAddress }}/connect?host={{ . }}">{{ . }}</a></li>
 {{- end }}
         </ul>
     </div>
