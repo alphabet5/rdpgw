@@ -102,7 +102,7 @@ func VerifyServerFunc(ctx context.Context, host string) (bool, error) {
 		return false, errors.New("no valid session info found in context")
 	}
 
-	if s.RemoteServer != host && Contains(config.Conf.Server.Hosts, "any") {
+	if s.RemoteServer != host && !(Contains(config.Conf.Server.Hosts, "any")) {
 		log.Printf("Client specified host %s does not match token host %s", host, s.RemoteServer)
 		return false, nil
 	}
