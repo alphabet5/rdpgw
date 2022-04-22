@@ -16,10 +16,8 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"fmt"
-	"html"
-//	"html/template"
-//	"embed"
+	"html/template"
+	_ "embed"
 )
 
 var cmd = &cobra.Command{
@@ -32,6 +30,9 @@ var (
 )
 
 var conf config.Configuration
+
+//go:embed index.html
+var index string
 
 func main() {
 	// get config
@@ -145,13 +146,29 @@ func main() {
 	http.HandleFunc("/tokeninfo", api.TokenInfo)
 	http.HandleFunc("/callback", api.HandleCallback)
 
-	////go:embed templates
-	//var templates embed.FS
+	type templateVariables struct{
+		gatewayAddress string
+		hosts []string
+	}
+	var templateData templateVariables
+	templateData.gatewayAddress = conf.Server.GatewayAddress
+	for i := range conf.Server.Hosts{
+		if conf.Server.Hosts[i] != "any" {
+			templateData.hosts = append(templateData.hosts, conf.Server.Hosts[i])
+		}
+	}
+
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
+		tmpl, err := template.New("index").Parse(index)
+		if err != nil {
+			log.Printf("Error creating template: %s", err)
+		}
+		err = tmpl.Execute(w, templateData)
+		if err != nil {
+			log.Printf("Error executing template: %s", err)
+		}
+
 	})
-	fs := http.FileServer(http.Dir("./static"))
-	http.Handle("/static", fs)
 
 
 	err = server.ListenAndServeTLS("", "")
