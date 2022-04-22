@@ -158,7 +158,7 @@ func main() {
 		}
 	}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/", api.Authenticated(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		tmpl, err := template.New("index").Parse(index)
 		if err != nil {
 			log.Printf("Error creating template: %s", err)
@@ -168,7 +168,7 @@ func main() {
 			log.Printf("Error executing template: %s", err)
 		}
 
-	})
+	})))
 
 
 	err = server.ListenAndServeTLS("", "")
