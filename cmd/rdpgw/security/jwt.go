@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/common"
 	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/protocol"
+	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/config"
 	"github.com/coreos/go-oidc/v3/oidc"
 	"github.com/square/go-jose/v3"
 	"github.com/square/go-jose/v3/jwt"
@@ -79,13 +80,29 @@ func VerifyPAAToken(ctx context.Context, tokenString string) (bool, error) {
 	return true, nil
 }
 
+// Index returns the index of the first occurrence of v in s,
+// or -1 if not present.
+func Index[E comparable](s []E, v E) int {
+	for i, vs := range s {
+		if v == vs {
+			return i
+		}
+	}
+	return -1
+}
+
+// Contains reports whether v is present in s.
+func Contains[E comparable](s []E, v E) bool {
+	return Index(s, v) >= 0
+}
+
 func VerifyServerFunc(ctx context.Context, host string) (bool, error) {
 	s := getSessionInfo(ctx)
 	if s == nil {
 		return false, errors.New("no valid session info found in context")
 	}
 
-	if s.RemoteServer != host {
+	if s.RemoteServer != host && Contains(config.Conf.Server.Hosts, "any") {
 		log.Printf("Client specified host %s does not match token host %s", host, s.RemoteServer)
 		return false, nil
 	}

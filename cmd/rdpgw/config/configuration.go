@@ -103,6 +103,8 @@ func ToCamel(s string) string {
 	return n.String()
 }
 
+var Conf Configuration
+
 func Load(configFile string) Configuration {
 
 	var k = koanf.New(".")
@@ -128,15 +130,13 @@ func Load(configFile string) Configuration {
 		log.Fatalf("Error loading config from file: %v", err)
 	}
 
-	var conf Configuration
-
 	koanfTag := koanf.UnmarshalConf{Tag: "koanf"}
-	k.UnmarshalWithConf("Server", &conf.Server, koanfTag)
-	k.UnmarshalWithConf("OpenId", &conf.OpenId, koanfTag)
-	k.UnmarshalWithConf("Caps", &conf.Caps, koanfTag)
-	k.UnmarshalWithConf("Security", &conf.Security, koanfTag)
-	k.UnmarshalWithConf("Client", &conf.Client, koanfTag)
+	k.UnmarshalWithConf("Server", &Conf.Server, koanfTag)
+	k.UnmarshalWithConf("OpenId", &Conf.OpenId, koanfTag)
+	k.UnmarshalWithConf("Caps", &Conf.Caps, koanfTag)
+	k.UnmarshalWithConf("Security", &Conf.Security, koanfTag)
+	k.UnmarshalWithConf("Client", &Conf.Client, koanfTag)
 
-	return conf
+	return Conf
 
 }
