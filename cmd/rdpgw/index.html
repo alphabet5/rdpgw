@@ -2713,11 +2713,6 @@
 
         /*# sourceMappingURL=pico.min.css.map */
     </style>
-    <style type="text/css">
-        .nobull {
-            list-style-type: none;
-        }
-    </style>
     <title>Remote Desktop Gateway</title>
 </head>
 
@@ -2737,10 +2732,10 @@
     </nav>
     <main class="container">
         <h3>Connections</h3>
-        <ul class="nobull">
+        <ul>
             {{- range .Hosts }}
-            <li>
-                <input type="button" onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ . }}'">{{ . }}</button>
+            <li style="list-style:none;">
+                <input type="button" onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ . }}'">{{ . }}</input>
             </li>
             {{- end }}
         </ul>
