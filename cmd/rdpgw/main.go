@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"crypto/tls"
+	_ "embed"
 	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/api"
 	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/common"
 	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/config"
@@ -12,12 +13,11 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"html/template"
-	_ "embed"
 )
 
 var cmd = &cobra.Command{
@@ -86,35 +86,39 @@ func main() {
 	}
 	api.NewApi()
 
-	if conf.Server.CertFile == "" || conf.Server.KeyFile == "" {
-		log.Fatal("Both certfile and keyfile need to be specified")
-	}
-
-	//mux := http.NewServeMux()
-	//mux.HandleFunc("*", HelloServer)
-
 	log.Printf("Starting remote desktop gateway server")
 
-	cfg := &tls.Config{}
-	tlsDebug := os.Getenv("SSLKEYLOGFILE")
-	if tlsDebug != "" {
-		w, err := os.OpenFile(tlsDebug, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
-		if err != nil {
-			log.Fatalf("Cannot open key log file %s for writing %s", tlsDebug, err)
-		}
-		log.Printf("Key log file set to: %s", tlsDebug)
-		cfg.KeyLogWriter = w
-	}
+	var server http.Server
 
-	cert, err := tls.LoadX509KeyPair(conf.Server.CertFile, conf.Server.KeyFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	cfg.Certificates = append(cfg.Certificates, cert)
-	server := http.Server{
-		Addr:         ":" + strconv.Itoa(conf.Server.Port),
-		TLSConfig:    cfg,
-		TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // disable http2
+	if conf.Server.TlsEnabled {
+		if conf.Server.CertFile == "" || conf.Server.KeyFile == "" {
+			log.Fatal("Both certfile and keyfile need to be specified")
+		}
+		cfg := &tls.Config{}
+		tlsDebug := os.Getenv("SSLKEYLOGFILE")
+		if tlsDebug != "" {
+			w, err := os.OpenFile(tlsDebug, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+			if err != nil {
+				log.Fatalf("Cannot open key log file %s for writing %s", tlsDebug, err)
+			}
+			log.Printf("Key log file set to: %s", tlsDebug)
+			cfg.KeyLogWriter = w
+		}
+
+		cert, err := tls.LoadX509KeyPair(conf.Server.CertFile, conf.Server.KeyFile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		cfg.Certificates = append(cfg.Certificates, cert)
+		server = http.Server{
+			Addr:         ":" + strconv.Itoa(conf.Server.Port),
+			TLSConfig:    cfg,
+			TLSNextProto: make(map[string]func(*http.Server, *tls.Conn, http.Handler)), // disable http2
+		}
+	} else {
+		server = http.Server{
+			Addr: ":" + strconv.Itoa(conf.Server.Port),
+		}
 	}
 
 	// create the gateway
@@ -146,13 +150,13 @@ func main() {
 	http.HandleFunc("/tokeninfo", api.TokenInfo)
 	http.HandleFunc("/callback", api.HandleCallback)
 
-	type templateVariables struct{
+	type templateVariables struct {
 		GatewayAddress string
-		Hosts []string
+		Hosts          []string
 	}
 	var templateData templateVariables
 	templateData.GatewayAddress = conf.Server.GatewayAddress
-	for i := range conf.Server.Hosts{
+	for i := range conf.Server.Hosts {
 		if conf.Server.Hosts[i] != "any" {
 			templateData.Hosts = append(templateData.Hosts, conf.Server.Hosts[i])
 		}
@@ -170,8 +174,11 @@ func main() {
 
 	})))
 
-
-	err = server.ListenAndServeTLS("", "")
+	if conf.Server.TlsEnabled {
+		err = server.ListenAndServeTLS("", "")
+	} else {
+		err = server.ListenAndServe()
+	}
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}

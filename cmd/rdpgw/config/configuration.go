@@ -21,6 +21,7 @@ type Configuration struct {
 type ServerConfig struct {
 	GatewayAddress       string   `koanf:"gatewayaddress"`
 	Port                 int      `koanf:"port"`
+	TlsEnabled           bool     `koanf:"tlsenabled"`
 	CertFile             string   `koanf:"certfile"`
 	KeyFile              string   `koanf:"keyfile"`
 	Hosts                []string `koanf:"hosts"`
@@ -112,6 +113,7 @@ func Load(configFile string) Configuration {
 	k.Load(confmap.Provider(map[string]interface{}{
 		"Server.CertFile":            "server.pem",
 		"Server.KeyFile":             "key.pem",
+		"Server.TlsEnabled":          true,
 		"Server.Port":                443,
 		"Client.NetworkAutoDetect":   1,
 		"Client.BandwidthAutoDetect": 1,
