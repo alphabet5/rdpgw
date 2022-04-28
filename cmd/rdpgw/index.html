@@ -2713,6 +2713,29 @@
 
         /*# sourceMappingURL=pico.min.css.map */
     </style>
+    <script>
+        function tableSort() {
+            // Declare variables
+            var input, filter, table, tr, td, i, txtValue;
+            input = document.getElementById("connections-search");
+            filter = input.value.toUpperCase();
+            table = document.getElementById("connections");
+            tr = table.getElementsByTagName("tr");
+
+            // Loop through all table rows, and hide those who don't match the search query
+            for (i = 0; i < tr.length; i++) {
+                td = tr[i].getElementsByTagName("td")[0];
+                if (td) {
+                    txtValue = td.textContent || td.innerText;
+                    if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                        tr[i].style.display = "";
+                    } else {
+                        tr[i].style.display = "none";
+                    }
+                }
+            }
+        }
+    </script>
     <title>Remote Desktop Gateway</title>
 </head>
 
@@ -2732,13 +2755,21 @@
     </nav>
     <main class="container">
         <h3>Connections</h3>
-        <ul>
-            {{- range .Hosts }}
-            <li style="list-style:none;">
-                <input type="button" onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ . }}'" value="{{ . }}"></input>
-            </li>
-            {{- end }}
-        </ul>
+        <input type="text" id="connections-search" onkeyup="tableSort()" placeholder="Search...">
+        <table id="connections" role="grid">
+            <tbody>
+                {{- range i := .Hosts }}
+                <tr onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ $.Hosts[$i] }}'">
+                    <td>
+                        {{ $.Hosts[$i] }}"
+                    </td>
+                    <td>
+                        {{ $.HostDescriptions[$i] }}
+                    </td>
+                </tr>
+                {{- end }}
+            </tbody>
+        </table>
     </main>
 </body>
 

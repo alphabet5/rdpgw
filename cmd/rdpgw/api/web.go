@@ -143,7 +143,6 @@ func (c *Config) Authenticated(next http.Handler) http.Handler {
 	})
 }
 
-
 func (c *Config) HandleDownload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	userName, ok := ctx.Value("preferred_username").(string)
@@ -154,19 +153,18 @@ func (c *Config) HandleDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	var requestedHost = r.URL.Query().Get("host")
 	var host string
 	if requestedHost != "" {
-		for i := range c.Hosts{
+		for i := range c.Hosts {
 			if c.Hosts[i] == "any" || c.Hosts[i] == requestedHost {
 				host = requestedHost
 			}
 		}
-	} else  {
+	} else {
 		var hosts []string
-		for i := range c.Hosts{
-			if c.Hosts[i] != "any"{
+		for i := range c.Hosts {
+			if c.Hosts[i] != "any" {
 				hosts = append(hosts, c.Hosts[i])
 			}
 		}
@@ -175,7 +173,7 @@ func (c *Config) HandleDownload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	host = strings.Replace(host, "{{ preferred_username }}", userName, 1)
-	
+
 	// split the username into user and domain
 	var user = userName
 	var domain = c.DefaultDomain

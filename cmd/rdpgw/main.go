@@ -151,14 +151,20 @@ func main() {
 	http.HandleFunc("/callback", api.HandleCallback)
 
 	type templateVariables struct {
-		GatewayAddress string
-		Hosts          []string
+		GatewayAddress   string
+		Hosts            []string
+		HostDescriptions []string
 	}
 	var templateData templateVariables
 	templateData.GatewayAddress = conf.Server.GatewayAddress
 	for i := range conf.Server.Hosts {
 		if conf.Server.Hosts[i] != "any" {
 			templateData.Hosts = append(templateData.Hosts, conf.Server.Hosts[i])
+			if len(conf.Server.Hosts) == len(conf.Server.HostDescriptions) {
+				templateData.HostDescriptions = append(templateData.HostDescriptions, conf.Server.HostDescriptions[i])
+			} else {
+				templateData.HostDescriptions = append(templateData.HostDescriptions, "")
+			}
 		}
 	}
 

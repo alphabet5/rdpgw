@@ -25,6 +25,7 @@ type ServerConfig struct {
 	CertFile             string   `koanf:"certfile"`
 	KeyFile              string   `koanf:"keyfile"`
 	Hosts                []string `koanf:"hosts"`
+	HostDescriptions	 []string `koanf:"hostdescriptions"`
 	RoundRobin           bool     `koanf:"roundrobin"`
 	SessionKey           string   `koanf:"sessionkey"`
 	SessionEncryptionKey string   `koanf:"sessionencryptionkey"`
