@@ -2761,7 +2761,7 @@
                 {{- range .Hosts }}
                 <tr>
                     <td onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ . }}'">
-                        {{ . }}
+                        {{ . | replace ":3389" "" }}
                     </td>
                 </tr>
                 {{- end }}
