@@ -18,7 +18,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
+	"github.com/Masterminds/sprig"
 )
 
 var cmd = &cobra.Command{
@@ -34,10 +34,6 @@ var conf config.Configuration
 
 //go:embed index.html
 var index string
-
-func replace(input, from,to string) string {
-	return strings.Replace(input,from,to, -1)
-}
 
 func main() {
 	// get config
@@ -167,12 +163,8 @@ func main() {
 		}
 	}
 	
-	funcMap := template.FuncMap{
-			"replace":  replace,
-	}
-
 	http.Handle("/", api.Authenticated(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		tmpl, err := template.New("index").Funcs(funcMap).Parse(index)
+		tmpl, err := template.New("index").Funcs(sprig.FuncMap()).Parse(index)
 		if err != nil {
 			log.Printf("Error creating template: %s", err)
 		}
