@@ -2758,13 +2758,10 @@
         <input type="text" id="connections-search" onkeyup="tableSort()" placeholder="Search...">
         <table id="connections" role="grid">
             <tbody>
-                {{- range $i := .Hosts }}
-                <tr onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ $.Hosts[$i] }}'">
-                    <td>
-                        {{ $.Hosts[$i] }}"
-                    </td>
-                    <td>
-                        {{ $.HostDescriptions[$i] }}
+                {{- range i .Hosts }}
+                <tr>
+                    <td onclick="location.href='https://{{ $.GatewayAddress }}/connect?host={{ . }}'">
+                        {{ . }}"
                     </td>
                 </tr>
                 {{- end }}
