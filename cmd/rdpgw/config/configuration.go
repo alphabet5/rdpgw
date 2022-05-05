@@ -69,6 +69,7 @@ type ClientConfig struct {
 	DefaultDomain       string `koanf:"defaultdomain"`
 }
 
+//Converts _ separated envs to camel case.
 func ToCamel(s string) string {
 	s = strings.TrimSpace(s)
 	n := strings.Builder{}

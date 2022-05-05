@@ -227,6 +227,7 @@ func (c *Config) HandleDownload(w http.ResponseWriter, r *http.Request) {
 		"networkautodetect:i:" + strconv.Itoa(c.NetworkAutoDetect) + "\r\n" +
 		"bandwidthautodetect:i:" + strconv.Itoa(c.BandwidthAutoDetect) + "\r\n" +
 		"connection type:i:" + strconv.Itoa(c.ConnectionType) + "\r\n" +
+		"dynamic resolution:i:1\r\n" + 
 		"username:s:" + render + "\r\n" +
 		"domain:s:" + domain + "\r\n" +
 		"bitmapcachesize:i:32000\r\n" +
