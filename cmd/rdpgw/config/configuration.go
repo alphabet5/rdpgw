@@ -1,13 +1,36 @@
 package config
 
 import (
+	"log"
+	"strings"
+
+	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/security"
 	"github.com/knadh/koanf"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/confmap"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
-	"log"
-	"strings"
+
+	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/security"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+
+	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/security"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
+
+	"github.com/bolkedebruin/rdpgw/cmd/rdpgw/security"
+	"github.com/knadh/koanf"
+	"github.com/knadh/koanf/parsers/yaml"
+	"github.com/knadh/koanf/providers/confmap"
+	"github.com/knadh/koanf/providers/env"
+	"github.com/knadh/koanf/providers/file"
 )
 
 type Configuration struct {
@@ -21,15 +44,18 @@ type Configuration struct {
 type ServerConfig struct {
 	GatewayAddress       string   `koanf:"gatewayaddress"`
 	Port                 int      `koanf:"port"`
-	TlsEnabled           bool     `koanf:"tlsenabled"`
 	CertFile             string   `koanf:"certfile"`
 	KeyFile              string   `koanf:"keyfile"`
 	Hosts                []string `koanf:"hosts"`
-	RoundRobin           bool     `koanf:"roundrobin"`
+	HostSelection        string   `koanf:"hostselection"`
 	SessionKey           string   `koanf:"sessionkey"`
 	SessionEncryptionKey string   `koanf:"sessionencryptionkey"`
+	SessionStore         string   `koanf:"sessionstore"`
 	SendBuf              int      `koanf:"sendbuf"`
-	ReceiveBuf           int      `koanf:"recievebuf"`
+	ReceiveBuf           int      `koanf:"receivebuf"`
+	Tls                  string   `koanf:"tls"`
+	Authentication       string   `koanf:"authentication"`
+	AuthSocket           string   `koanf:"authsocket"`
 }
 
 type OpenIDConfig struct {
@@ -56,6 +82,8 @@ type SecurityConfig struct {
 	PAATokenSigningKey     string `koanf:"paatokensigningkey"`
 	UserTokenEncryptionKey string `koanf:"usertokenencryptionkey"`
 	UserTokenSigningKey    string `koanf:"usertokensigningkey"`
+	QueryTokenSigningKey   string `koanf:"querytokensigningkey"`
+	QueryTokenIssuer       string `koanf:"querytokenissuer"`
 	VerifyClientIp         bool   `koanf:"verifyclientip"`
 	EnableUserToken        bool   `koanf:"enableusertoken"`
 }
@@ -69,7 +97,6 @@ type ClientConfig struct {
 	DefaultDomain       string `koanf:"defaultdomain"`
 }
 
-//Converts _ separated envs to camel case.
 func ToCamel(s string) string {
 	s = strings.TrimSpace(s)
 	n := strings.Builder{}
@@ -112,13 +139,16 @@ func Load(configFile string) Configuration {
 	var k = koanf.New(".")
 
 	k.Load(confmap.Provider(map[string]interface{}{
-		"Server.CertFile":            "server.pem",
-		"Server.KeyFile":             "key.pem",
-		"Server.TlsEnabled":          true,
+		"Server.Tls":                 "auto",
 		"Server.Port":                443,
+		"Server.SessionStore":        "cookie",
+		"Server.HostSelection":       "roundrobin",
+		"Server.Authentication":      "openid",
+		"Server.AuthSocket":          "/tmp/rdpgw-auth.sock",
 		"Client.NetworkAutoDetect":   1,
 		"Client.BandwidthAutoDetect": 1,
 		"Security.VerifyClientIp":    true,
+		"Caps.TokenAuth":             true,
 	}, "."), nil)
 
 	if err := k.Load(file.Provider(configFile), yaml.Parser()); err != nil {
@@ -139,6 +169,55 @@ func Load(configFile string) Configuration {
 	k.UnmarshalWithConf("Caps", &Conf.Caps, koanfTag)
 	k.UnmarshalWithConf("Security", &Conf.Security, koanfTag)
 	k.UnmarshalWithConf("Client", &Conf.Client, koanfTag)
+
+	if len(Conf.Security.PAATokenEncryptionKey) != 32 {
+		Conf.Security.PAATokenEncryptionKey, _ = security.GenerateRandomString(32)
+		log.Printf("No valid `security.paatokenencryptionkey` specified (empty or not 32 characters). Setting to random")
+	}
+
+	if len(Conf.Security.PAATokenSigningKey) != 32 {
+		Conf.Security.PAATokenSigningKey, _ = security.GenerateRandomString(32)
+		log.Printf("No valid `security.paatokensigningkey` specified (empty or not 32 characters). Setting to random")
+	}
+
+	if Conf.Security.EnableUserToken {
+		if len(Conf.Security.UserTokenEncryptionKey) != 32 {
+			Conf.Security.UserTokenEncryptionKey, _ = security.GenerateRandomString(32)
+			log.Printf("No valid `security.usertokenencryptionkey` specified (empty or not 32 characters). Setting to random")
+		}
+
+		if len(Conf.Security.UserTokenSigningKey) != 32 {
+			Conf.Security.UserTokenSigningKey, _ = security.GenerateRandomString(32)
+			log.Printf("No valid `security.usertokensigningkey` specified (empty or not 32 characters). Setting to random")
+		}
+	}
+
+	if len(Conf.Server.SessionKey) != 32 {
+		Conf.Server.SessionKey, _ = security.GenerateRandomString(32)
+		log.Printf("No valid `server.sessionkey` specified (empty or not 32 characters). Setting to random")
+	}
+
+	if len(Conf.Server.SessionEncryptionKey) != 32 {
+		Conf.Server.SessionEncryptionKey, _ = security.GenerateRandomString(32)
+		log.Printf("No valid `server.sessionencryptionkey` specified (empty or not 32 characters). Setting to random")
+	}
+
+	if Conf.Server.HostSelection == "signed" && len(Conf.Security.QueryTokenSigningKey) == 0 {
+		log.Fatalf("host selection is set to `signed` but `querytokensigningkey` is not set")
+	}
+
+	if Conf.Server.Authentication == "local" && Conf.Server.Tls == "disable" {
+		log.Fatalf("basicauth=local and tls=disable are mutually exclusive")
+	}
+
+	if !Conf.Caps.TokenAuth && Conf.Server.Authentication == "openid" {
+		log.Fatalf("openid is configured but tokenauth disabled")
+	}
+
+	// prepend '//' if required for URL parsing
+	if !strings.Contains(Conf.Server.GatewayAddress, "//") {
+		Conf.Server.GatewayAddress = "//" + Conf.Server.GatewayAddress
+	}
 
 	return Conf
 

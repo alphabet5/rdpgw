@@ -35,6 +35,8 @@ type SessionInfo struct {
 	RemoteServer string
 	// The obtained client ip address
 	ClientIp string
+	// User
+	UserName string
 }
 
 // readMessage parses and defragments a packet from a Transport. It returns

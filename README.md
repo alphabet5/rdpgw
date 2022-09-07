@@ -2,6 +2,10 @@ GO Remote Desktop Gateway
 =========================
 
 ![Go](https://github.com/bolkedebruin/rdpgw/workflows/Go/badge.svg)
+[![Docker Pulls](https://badgen.net/docker/pulls/bolkedebruin/rdpgw?icon=docker&label=pulls)](https://hub.docker.com/r/bolkedebruin/rdpgw/)
+[![Docker Stars](https://badgen.net/docker/stars/bolkedebruin/rdpgw?icon=docker&label=stars)](https://hub.docker.com/r/bolkedebruin/rdpgw/)
+[![Docker Image Size](https://badgen.net/docker/size/bolkedebruin/rdpgw?icon=docker&label=image%20size)](https://hub.docker.com/r/bolkedebruin/rdpgw/)
+
 
 :star: Star us on GitHub — it helps!
 
@@ -20,6 +24,9 @@ you can integrate your remote desktops with Keycloak, Okta, Google, Azure, Apple
 if you want. 
 
 ## Security
+
+__NOTE__: rdogw now supports PAM authentication as well if you configure it to use 'local' authentication. Further documentation pending.
+
 RDPGW wants to be secure when you set it up from the beginning. It does this by having OpenID
 Connect integration enabled by default. Cookies are encrypted and signed on the client side relying
 on [Gorilla Sessions](https://www.gorillatoolkit.org/pkg/sessions). PAA tokens (gateway access tokens)
@@ -40,65 +47,87 @@ template.
 
 ```yaml
 # web server configuration. 
-server:
- # TLS certificate files (required)
- certFile: server.pem
- keyFile: key.pem
- # gateway address advertised in the rdp files
- gatewayAddress: localhost
- # port to listen on
- port: 443
+Server:
+ # can be set to openid (default) and local. If openid is used rdpgw expects
+ # a configured openid provider, make sure to set caps.tokenauth to true. If local
+ # rdpgw connects to rdpgw-auth over a socket to verify users and password. Note:
+ # rdpgw-auth needs to be run as root or setuid in order to work
+ Authentication: openid
+ # The socket to connect to if using local auth. Ensure rdpgw auth is configured to
+ # use the same socket.
+ AuthSocket: /tmp/rdpgw-auth.sock
+ # The default option 'auto' uses a certificate file if provided and found otherwise
+ # it uses letsencrypt to obtain a certificate, the latter requires that the host is reachable
+ # from letsencrypt servers. If TLS termination happens somewhere else (e.g. a load balancer)
+ # set this option to 'disable'. This is mutually exclusive with 'authentication: local'
+ # Note: rdp connections over a gateway require TLS
+ Tls: auto
+ # TLS certificate files
+ CertFile: server.pem
+ KeyFile: key.pem
+ # gateway address advertised in the rdp files and browser
+ GatewayAddress: localhost
+ # port to listen on (change to 80 or equivalent if not using TLS)
+ Port: 443
  # list of acceptable desktop hosts to connect to
- hosts:
+ Hosts:
   - localhost:3389
   - my-{{ preferred_username }}-host:3389
-  # Allow the user to connect to any host (insecure)
-  - any 
  # if true the server randomly selects a host to connect to
- roundRobin: false 
+ # valid options are: 
+ #  - roundrobin, which selects a random host from the list (default)
+ #  - signed, a listed host specified in the signed query parameter
+ #  - unsigned, a listed host specified in the query parameter
+ #  - any, insecurely allow any host specified in the query parameter
+ HostSelection: roundrobin 
  # a random strings of at least 32 characters to secure cookies on the client
  # make sure to share this across the different pods
- sessionKey: thisisasessionkeyreplacethisjetzt
- sessionEncryptionKey: thisisasessionkeyreplacethisnunu!
- # tries to set the receive / send buffer of the connections to the client
+ SessionKey: thisisasessionkeyreplacethisjetzt
+ SessionEncryptionKey: thisisasessionkeyreplacethisnunu!
+  # where to store session details. This can be either file or cookie (default: cookie)
+  # if a file store is chosen, it is required to have clients 'keep state' to the rdpgw
+  # instance they are connected to.
+ SessionStore: cookie
+  # tries to set the receive / send buffer of the connections to the client
  # in case of high latency high bandwidth the defaults set by the OS might
  # be to low for a good experience
- # receiveBuf: 12582912
- # sendBuf: 12582912 
+ # ReceiveBuf: 12582912
+ # SendBuf: 12582912 
 # Open ID Connect specific settings
-openId:
- providerUrl: http://keycloak/auth/realms/test
- clientId: rdpgw
- clientSecret: your-secret
+OpenId:
+ ProviderUrl: http://keycloak/auth/realms/test
+ ClientId: rdpgw
+ ClientSecret: your-secret
 # enabled / disabled capabilities
-caps:
- smartCardAuth: false
- tokenAuth: true
+Caps:
+ SmartCardAuth: false
+ TokenAuth: true
  # connection timeout in minutes, 0 is limitless
- idleTimeout: 10
- enablePrinter: true
- enablePort: true
- enablePnp: true
- enableDrive: true
- enableClipboard: true
-client:
+ IdleTimeout: 10
+ EnablePrinter: true
+ EnablePort: true
+ EnablePnp: true
+ EnableDrive: true
+ EnableClipboard: true
+Client:
   # this is a go string templated with {{ username }} and {{ token }}
   # the example below uses the ASCII field separator to distinguish
   # between user and token 
-  usernameTemplate: "{{ username }}@bla.com\x1f{{ token }}"
+  UsernameTemplate: "{{ username }}@bla.com\x1f{{ token }}"
   # rdp file settings see: 
   # https://docs.microsoft.com/en-us/windows-server/remote/remote-desktop-services/clients/rdp-files
-  networkAutoDetect: 0
-  bandwidthAutoDetect: 1
+  NetworkAutoDetect: 0
+  BandwidthAutoDetect: 1
   ConnectionType: 6
   # If true puts splits "user@domain.com" into the user and domain component so that
   # domain gets set in the rdp file and the domain name is stripped from the username
   SplitUserDomain: false
-security:
-  # a random string of at least 32 characters to secure cookies on the client
+Security:
+  # a random string of 32 characters to secure cookies on the client
   # make sure to share this amongst different pods
   PAATokenSigningKey: thisisasessionkeyreplacethisjetzt
   # PAATokenEncryptionKey: thisisasessionkeyreplacethisjetzt
+  # a random string of 32 characters to secure cookies on the client
   UserTokenEncryptionKey: thisisasessionkeyreplacethisjetzt
   # if you want to enable token generation for the user
   # if true the username will be set to a jwt with the username embedded into it
